@@ -32,3 +32,27 @@
   gap: 20px;
   background-color: #E3F2FD;
 }
+
+button {
+  border-color: #007BFF;
+  background-color: #B3E5FC;
+  color: #000000;
+}
+
+input {
+  border-color: #007BFF;
+  background-color: #FFFFFF;
+}
+
+textarea {
+  border-color: #007BFF;
+  background-color: #FFFFFF;
+}
+
+.task-card-col-4 {
+  grid-column: 4;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: 10px;
+  background-color: #E3F2FD;
+}

@@ -32,20 +32,24 @@
 
 
                         <div class="task-card-col-4" :class="{ overdue: task.overdue }">
+                            <input v-if="task.isEditing" v-model="task.deadline" type="date" class="task-deadline" @input="checkDeadline(task)">
+                            <div v-if="column.title === 'Выполненные задачи'" class="task-overdue">
+                                <p v-if="task.isOverdue">Overdue</p>
+                                <p v-else>Completed on time</p>
+                            </div>
+                            <div v-if="column.title === 'Выполненные задачи'" v-else class="task-completed">
+
+                            </div>
                         </div>
                         <p v-if="returnReason" >{{ task.returnReason }}</p>
                     </div>
 
                 </transition-group>
-
             </div>
-
             <button v-if="column.title === 'Задачи в работе'" @click="moveToTesting(column)">Move to Testing</button>
             <button v-if="column.title === 'Тестирование'" @click="moveToCompletedtasks(column)">Move to Completed tasks</button>
             <button v-if="column.title === 'Тестирование'" @click="moveToWork(column, returnReason)">Move to work</button>
-
             <input type="text" v-model="returnReason" placeholder="Reason for returning to work" class="return-reason" v-if="column.title === 'Тестирование'">
-            <button v-if="column.title === 'Тестирование'" @click="moveToWork(column, returnReason)">Move to work</button>
         </div>
     </div>
 </div>
