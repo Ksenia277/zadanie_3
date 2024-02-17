@@ -13,7 +13,6 @@
 <div id="app">
     <div class="grid-container">
         <div class="column" v-for="(column, index) in columns" :key="index">
-            <button v-if="column.title === 'Запланированные задачи'" @click="addTask(column)">Add Task</button>
             <h3>{{ column.title }}</h3>
             <div class="task-list" :options="{ group: 'tasks' }">
                 <transition-group>
@@ -26,7 +25,6 @@
                         <p class="task-title" v-else>{{ task.title }}</p>
                         <textarea v-model="task.description" class="task-description"></textarea>
                         <input v-model="task.deadline" type="datetime-local" class="task-deadline" @input="checkDeadline(task)">
-                        <button v-if="column.title === 'Запланированные задачи'" @click="moveToInProgress(column)">Move to work</button>
                         <p>last edit: {{ task.lastChange}}</p>
                         <p>date of creation: {{ task.dateCreation}}</p>
 
@@ -37,6 +35,8 @@
                     </div>
 
                 </transition-group>
+                <button v-if="column.title === 'Запланированные задачи'" @click="addTask(column)">Add Task</button>
+                <button v-if="column.title === 'Запланированные задачи'" @click="moveToInProgress(column)">Move to work</button>
             </div>
 
             <button v-if="column.title === 'Задачи в работе'" @click="moveToTesting(column)">Move to Testing</button>

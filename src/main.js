@@ -46,6 +46,12 @@ const app = new Vue({
                 this.isFirstTask(column.tasks.length - 1, column.tasks);
             });
         },
+        moveTask(task, targetColumn) {
+            const sourceColumnIndex = this.columns.findIndex((column) => column.tasks.includes(task));
+            this.columns[sourceColumnIndex].tasks = this.columns[sourceColumnIndex].tasks.filter((t) => t.id !== task.id);
+            targetColumn.tasks.push(task);
+            this.updateTaskDates(task);
+        },
         removeTask(task, column) {
             column.tasks = column.tasks.filter((t) => t.id !== task.id);
             this.updateTaskDates(task);
