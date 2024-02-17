@@ -76,5 +76,10 @@ const app = new Vue({
             this.columns[1].tasks.push(taskToMove);
             this.updateTaskDates(taskToMove);
         },
+        moveToTesting(column) {
+            const taskToMove = column.tasks.shift();
+            this.columns[2].tasks.push(taskToMove);
+            this.updateTaskDates(taskToMove);
+        },
     },
 });
