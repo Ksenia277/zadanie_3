@@ -39,18 +39,11 @@ const app = new Vue({
                 description: '',
                 deadline: '',
                 createdAt: new Date(),
-                updatedAt: null,
             };
             column.tasks.push(newTask);
             this.$nextTick(() => {
                 this.isFirstTask(column.tasks.length - 1, column.tasks);
             });
-        },
-        moveTask(task, targetColumn) {
-            const sourceColumnIndex = this.columns.findIndex((column) => column.tasks.includes(task));
-            this.columns[sourceColumnIndex].tasks = this.columns[sourceColumnIndex].tasks.filter((t) => t.id !== task.id);
-            targetColumn.tasks.push(task);
-            this.updateTaskDates(task);
         },
         removeTask(task, column) {
             column.tasks = column.tasks.filter((t) => t.id !== task.id);
@@ -58,9 +51,6 @@ const app = new Vue({
         },
         saveTask(task) {
             task.updatedAt = new Date();
-        },
-        isEditingTask(task) {
-            return task.updatedAt === null;
         },
         isFirstTask(taskIndex, tasks) {
             return taskIndex === 0 && tasks[taskIndex].updatedAt === null;
