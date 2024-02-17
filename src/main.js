@@ -39,6 +39,7 @@ const app = new Vue({
                 description: '',
                 deadline: '',
                 createdAt: new Date(),
+                updatedAt: null,
             };
             column.tasks.push(newTask);
             this.$nextTick(() => {
@@ -52,6 +53,9 @@ const app = new Vue({
         saveTask(task) {
             task.updatedAt = new Date();
         },
+        isEditingTask(task) {
+            return task.updatedAt === null;
+        },
         isFirstTask(taskIndex, tasks) {
             return taskIndex === 0 && tasks[taskIndex].updatedAt === null;
         },
@@ -60,6 +64,11 @@ const app = new Vue({
                 task.createdAt = new Date();
             }
             task.updatedAt = new Date();
+        },
+        moveToInProgress(column) {
+            const taskToMove = column.tasks.shift();
+            this.columns[1].tasks.push(taskToMove);
+            this.updateTaskDates(taskToMove);
         },
     },
 });
