@@ -38,25 +38,33 @@ const app = new Vue({
             completedTasks: [],
         };
     },
+    filters: {
+        formatDate(value) {
+            if (value instanceof Date) {
+                return value.toLocaleString();
+            } else {
+                return value;
+            }
+        }
+    },
     methods: {
         addTask(column) {
-            const newTask = {
-                id: Date.now(),
-                title: '',
-                description: '',
-                deadline: '',
-                createdAt: new Date(),
-                updatedAt: null,
-                isEditing: false,
-                initialDeadline: null,
-                isOverdue: false,
-                reasonToWork: null,
-                testingDate: null,
-            };
-            column.tasks.push(newTask);
-            this.$nextTick(() => {
-                this.isFirstTask(column.tasks.length - 1, column.tasks);
-            });
+            if (column === this.columns[0]) {
+                const newTask = {
+                    id: Date.now(),
+                    title: '',
+                    description: '',
+                    deadline: '',
+                    createdAt: new Date(),
+                    updatedAt: null,
+                    isEditing: false,
+                    initialDeadline: null,
+                    isOverdue: false,
+                    reasonToWork: null,
+                    testingDate: null,
+                };
+                column.tasks.push(newTask);
+            }
         },
         moveTask(task, targetColumn) {
             const sourceColumnIndex = this.columns.findIndex((column) => column.tasks.includes(task));
@@ -79,6 +87,7 @@ const app = new Vue({
                 task.createdAt = new Date();
             }
             task.updatedAt = new Date();
+            task.lastChange = task.updatedAt;
         },
         moveToInProgress(column) {
             const taskToMove = column.tasks.shift();
@@ -94,7 +103,7 @@ const app = new Vue({
             const taskToMove = column.tasks.shift();
             this.columns[3].tasks.push(taskToMove);
             this.updateTaskDates(taskToMove);
-            checkDeadline(taskToMove);
+            // checkDeadline(taskToMove);
         },
         moveToWork(column) {
             if (!this.returnReason) {
@@ -108,15 +117,7 @@ const app = new Vue({
             this.columns[1].tasks.push(taskToMove);
             this.updateTaskDates(taskToMove);
         },
-
-        // moveToWork(column, returnReason) {
-        //     const taskToMove = column.tasks.shift();
-        //     taskToMove.returnReason = returnReason;
-        //     this.updateTaskDates(taskToMove);
-        //     this.columns[0].tasks.push(taskToMove);
-        // },
         moveToCompletedtasks() {
-
             const testingColumn = this.columns.find(col => col.title === 'Тестирование');
             const completedColumn = this.columns.find(col => col.title === 'Выполненные задачи');
 
@@ -125,33 +126,13 @@ const app = new Vue({
             const task = testingColumn.tasks.splice(index, 1)[0];
 
             completedColumn.tasks.push(task);
-
         },
-        updateTaskDates(task) {
-            if (task.updatedAt === null) {
-                task.createdAt = new Date();
+        formatDate(date) {
+            if (date instanceof Date) {
+                return date.toLocaleString();
+            } else {
+                return date;
             }
-            task.updatedAt = new Date();
-            task.lastChange = task.updatedAt;
-        },
-        updateTaskDates(task) {
-            if (task.createdAt === null) {
-                task.createdAt = new Date();
-            }
-            task.updatedAt = new Date();
-            task.lastChange = task.updatedAt;
-        },
-        editTask(task) {
-            task.isEditing = true;
-            task.initialDeadline = task.deadline;
-        },
-        saveTask(task) {
-            task.isEditing = false;
-            // this.updateTaskDates(task);
-        },
-        cancelEditingTask(task) {
-            task.isEditing = false;
-            task.deadline = task.initialDeadline;
         },
         checkDeadline(task) {
             const currentDate = new Date();
@@ -163,3 +144,12 @@ const app = new Vue({
         },
     },
 });
+
+Vue.filter('formatDate', function(value) {
+    if (value instanceof Date) {
+        return value.toLocaleString();
+    } else {
+        return value;
+    }
+});
+
