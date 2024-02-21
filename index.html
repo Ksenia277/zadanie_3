@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.18/vue.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
+    <script
+            src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
     <script defer src="/src/main.js"></script>
     <link rel="stylesheet" href="src/assets/main.css">
     <title>Kanban доска</title>
@@ -12,9 +12,11 @@
 <body>
 <div id="app">
     <div class="grid-container">
-        <column v-for="(column, index) in columns" :key="index" :column="column" @move-to-testing="moveToTesting" @move-to-completedtasks="moveToCompletedtasks" @move-to-work="moveToWork"></column>
+        <column v-for="(column, index) in columns" :key="index"
+                :column="column" @move-to-testing="moveToTesting"
+                @move-to-work="moveToWork" @move-to-
+                completed="moveToCompletedtasks"></column>
     </div>
 </div>
-<script defer src="./js/main.js"></script>
 </body>
 </html>

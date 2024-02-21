@@ -1,19 +1,24 @@
+
 Vue.component('task', {
     props: ['task', 'column'],
     template: `
       <div class="task-card">
         <div class="task-actions" v-if="isEditingTask(task) || isFirstTask(taskIndex, column.tasks)">
-          <button @click="$emit('remove-task', task)">Удалить</button>
+          <button @click="removeTask(task)">Удалить</button>
         </div>
-        <input v-model="task.title" type="text" class="task-title" v-if="isEditingTask(task)">
+        <input v-model="task.title" type="text" class="task-title" @input="updateTask(task)">
         <p class="task-title" v-else>{{ task.title }}</p>
-        <textarea v-model="task.description" class="task-description"></textarea>
-        <input v-model="task.deadline" type="datetime-local" class="task-deadline" @input="checkDeadline(task)">
-        <p>Дата редактирования: {{ task.lastChange | formatDate }}</p>
+        <textarea v-model="task.description" class="task-description" @input="updateTask(task)"></textarea>
+        <input v-model="task.deadline" type="datetime-local" class="task-deadline" @input="updateTask(task)">
+        <p>Дата редактирования: {{ task.updatedAt | formatDate }}</p>
         <p>Дата создания: {{ task.createdAt | formatDate }}</p>
       </div>
     `,
     methods: {
+
+        updateTask(task) {
+            task.updatedAt = new Date(); // Обновление времени последнего изменения задачи
+        },
         removeTask(task) {
             const index = this.column.tasks.indexOf(task);
             if (index !== -1) {
@@ -56,22 +61,37 @@ Vue.component('task-list', {
 
 
 Vue.component('column', {
-    props: ['column'],
+    props: ['column', 'columns'],
+    data() {
+        return {
+            returnReason: '',
+        };
+    },
+    computed: {
+        showReturnInput() {
+            return this.column.title === 'Тестирование' && this.column.tasks.some(task => task.isEditing);
+        },
+    },
     template: `
       <div class="column">
         <button v-if="column.title === 'Запланированные задачи'" @click="addTask(column)">Создать</button>
         <h3>{{ column.title }}</h3>
-        <task-list :tasks="column.tasks" :column="column" @remove-task="removeTask($event)"></task-list>
-        <button v-if="column.title === 'Задачи в работе'" @click="moveToTesting(column)">Перенести в "Тестирование"</button>
-        <button v-if="column.title === 'Запланированные задачи'" @click="moveToWork(column)">Перенести в "Задачи в работе"</button>
-        <button v-if="column.title === 'Тестирование'" @click="moveToWork(column)">Обратно в "Задачи в работе"</button>
-        <input type="text" v-model="returnReason" placeholder="Reason for returning to work" class="return-reason" v-if="column.title === 'Тестирование'">
+        <task-list :tasks="column.tasks" :column="column"></task-list>
+        <button v-if="column.title === 'Задачи в работе'" @click="moveToTesting(column)">Перенести в 'Тестирование'</button>
+        <button v-if="column.title === 'Запланированные задачи'" @click="moveToWork(column)">Перенести в 'Задачи в работе'</button>
+        <button v-if="column.title === 'Тестирование'" @click="moveToWork(column)">Обратно в 'Задачи в работе'</button>
+        <button v-if="column.title === 'Тестирование'" @click="moveToCompletedtasks">Перенести в выполненные</button>
+        <div v-if="showReturnInput">
+          <label>Причина возврата:</label>
+          <input type="text" v-model="returnReason" @input="updateReasonToWork" placeholder="Введите причину возврата">
+        </div>
         <column
-            v-for="column in columns"
-            :key="column.title"
-            :column="column"
-            @move-to-testing="moveTaskToTesting($event)"
-        ></column>      
+            v-for="(col, index) in columns"
+            :key="col.title + index"
+            :column="col"
+            :columns="columns"
+            @move-to-testing="moveTaskToTesting"
+        ></column>
       </div>
     `,
     methods: {
@@ -91,7 +111,15 @@ Vue.component('column', {
             };
             column.tasks.push(newTask);
         },
+        updateReasonToWork() {
+            this.column.tasks.forEach(task => {
+                if (task.isEditing) {
+                    task.reasonToWork = this.returnReason;
+                }
+            });
+        },
         moveToTesting(column) {
+            this.updateReasonToWork();
             if (column.tasks.length > 0) {
                 const taskToMove = column.tasks.shift();
                 this.$emit('move-to-testing', taskToMove);
@@ -103,28 +131,22 @@ Vue.component('column', {
                 testingColumn.tasks.push(task);
             }
         },
-        removeTask(task) {
-            const index = this.column.tasks.indexOf(task);
-            if (index !== -1) {
-                this.column.tasks.splice(index, 1);
-                // Обновляем состояние Vue, чтобы Vue мог отслеживать изменения
-                this.$forceUpdate();
-            }
-        },
         moveToCompletedtasks() {
             const testingColumn = this.columns.find(col => col.title === 'Тестирование');
             const completedColumn = this.columns.find(col => col.title === 'Выполненные задачи');
 
-            const index = testingColumn.tasks.findIndex(task => task.title === 'Task to Move');
-
-            const task = testingColumn.tasks.splice(index, 1)[0];
-
-            this.$parent.moveToCompletedtasks(column);
+            if (testingColumn && testingColumn.tasks.length > 0) {
+                const taskToMove = testingColumn.tasks.shift();
+                if (completedColumn) {
+                    completedColumn.tasks.push(taskToMove);
+                }
+            }
         },
         moveToWork(column) {
             if (column.tasks.length > 0) {
                 const taskToMove = column.tasks[0];
-                const workColumn = this.$parent.columns.find(col => col.title === 'Задачи в работе');
+                const workColumn = this.$parent.columns.find(col => col.title
+                    === 'Задачи в работе');
                 if (workColumn) {
                     const index = column.tasks.indexOf(taskToMove);
                     if (index !== -1) {
@@ -134,10 +156,17 @@ Vue.component('column', {
                         column.tasks = newTasks;
                         workColumn.tasks.push(taskToMove);
                     }
+                    task.returnReason = '';
                 }
             }
+        },
         }
-    }
+
+});
+
+Vue.filter('formatDate', function(value) {
+    if (!value) return '';
+    return new Date(value).toLocaleString();
 });
 
 const app = new Vue({
@@ -190,6 +219,39 @@ const app = new Vue({
         }
     },
     methods: {
+        moveToWork(column) {
+            if (column.tasks.length > 0) {
+                const taskToMove = column.tasks[0];
+                const workColumn = this.columns.find(col => col.title === 'Задачи в работе');
+                if (workColumn) {
+                    const index = column.tasks.indexOf(taskToMove);
+                    if (index !== -1) {
+                        // Удаляем задачу из исходного массива без мутации
+                        const newTasks = [...column.tasks];
+                        newTasks.splice(index, 1);
+                        // Перемещаем задачу в столбец "Задачи в работе"
+                        column.tasks = newTasks;
+                        workColumn.tasks.push(taskToMove);
+                    }
+                }
+            }
+        },
+        moveToTesting(taskToMove, column) {
+            const testingColumn = this.columns.find(col => col.title ===
+                'Тестирование');
+            if (testingColumn) {
+                testingColumn.tasks.push(taskToMove);
+            }
+            column.tasks.shift();
+        },
+        moveToCompletedtasks(task) {
+            const index = this.completedTasks.indexOf(task);
+            if (index !== -1) {
+                this.completedTasks.splice(index, 1);
+                // Добавляем задачу в столбец "Выполненные задачи"
+                this.$root.$emit('move-to-completed-tasks', task);
+            }
+        },
         removeTask(task) {
             const column = this.$parent.column;
             const index = column.tasks.indexOf(task);
@@ -219,11 +281,18 @@ const app = new Vue({
                 return date;
             }
         },
+        handleMoveToCompletedTasks(task) {
+            // Добавляем задачу в столбец "Выполненные задачи"
+            this.completedTasks.push(task);
+        }
+    },
+    mounted() {
+        this.$root.$on('move-to-completed-tasks', this.handleMoveToCompletedTasks);
     }
 });
 
-Vue.filter('formatDate', function(value) {
+Vue.filter('formatDate', function (value) {
     if (!value) return '';
-    return new Date(value).toLocaleString();
+    const date = new Date(value);
+    return date.toLocaleString(); // Пример формата вывода даты, здесь используется стандартный метод Date API для форматирования даты и времени
 });
-
