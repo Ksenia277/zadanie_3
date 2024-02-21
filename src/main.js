@@ -23,11 +23,12 @@ Vue.component('task', {
           <label for="return-reason">Причина возврата:</label>
           <input id="return-reason" type="text" v-model="returnReason" placeholder="Введите причину возврата">
         </div>
+      </div>
     `,
     methods: {
 
         updateTask(task) {
-            task.updatedAt = new Date(); // Обновление времени последнего изменения задачи
+            task.updatedAt = new Date();
         },
         removeTask(task) {
             const index = this.column.tasks.indexOf(task);
@@ -155,7 +156,6 @@ Vue.component('column', {
                 if (workColumn) {
                     const index = column.tasks.indexOf(taskToMove);
                     if (index !== -1) {
-                        // Удаляем задачу из исходного массива без мутации
                         const newTasks = [...column.tasks];
                         newTasks.splice(index, 1);
                         column.tasks = newTasks;
@@ -178,7 +178,6 @@ Vue.component('column', {
                     }
                     const index = column.tasks.indexOf(taskToMove);
                     if (index !== -1) {
-                        // Удаляем задачу из исходного массива без мутации
                         const newTasks = [...column.tasks];
                         newTasks.splice(index, 1);
                         column.tasks = newTasks;
@@ -256,10 +255,8 @@ const app = new Vue({
                 if (workColumn) {
                     const index = column.tasks.indexOf(taskToMove);
                     if (index !== -1) {
-                        // Удаляем задачу из исходного массива без мутации
                         const newTasks = [...column.tasks];
                         newTasks.splice(index, 1);
-                        // Перемещаем задачу в столбец "Задачи в работе"
                         column.tasks = newTasks;
                         workColumn.tasks.push(taskToMove);
                     }
@@ -294,7 +291,6 @@ const app = new Vue({
             if (deadlineDate < currentDate) {
                 task.isOverdue = true;
             }
-            // Обновляем дату редактирования задачи
             task.lastChange = new Date();
         },
         isEditingTask(task) {
@@ -311,7 +307,6 @@ const app = new Vue({
             }
         },
         handleMoveToCompletedTasks(task) {
-            // Добавляем задачу в столбец "Выполненные задачи"
             this.completedTasks.push(task);
         }
     },
@@ -323,5 +318,5 @@ const app = new Vue({
 Vue.filter('formatDate', function (value) {
     if (!value) return '';
     const date = new Date(value);
-    return date.toLocaleString(); // Пример формата вывода даты, здесь используется стандартный метод Date API для форматирования даты и времени
+    return date.toLocaleString();
 });

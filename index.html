@@ -11,6 +11,7 @@
 </head>
 <body>
 <div id="app">
+
     <div class="grid-container">
         <column v-for="(column, index) in columns" :key="index"
                 :column="column" @move-to-testing="moveToTesting"
