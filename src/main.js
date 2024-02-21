@@ -1,9 +1,13 @@
-
 Vue.component('task', {
+    data() {
+        return {
+            returnReason: '',
+        }
+    },
     props: ['task', 'column'],
     template: `
       <div class="task-card">
-        <div class="task-actions" v-if="isEditingTask(task) || isFirstTask(taskIndex, column.tasks)">
+        <div class="task-actions" v-if="isEditingTask(task) || isFirstTask(column.tasks.indexOf(task), column.tasks)">
           <button @click="removeTask(task)">Удалить</button>
         </div>
         <input v-model="task.title" type="text" class="task-title" @input="updateTask(task)">
@@ -12,7 +16,13 @@ Vue.component('task', {
         <input v-model="task.deadline" type="datetime-local" class="task-deadline" @input="updateTask(task)">
         <p>Дата редактирования: {{ task.updatedAt | formatDate }}</p>
         <p>Дата создания: {{ task.createdAt | formatDate }}</p>
-      </div>
+        <div v-if="column.title === 'Задачи в работе'">
+          <p>Причина возврата: {{ returnReason }}</p>
+        </div>
+        <div v-if="column.title === 'Тестирование'">
+          <label for="return-reason">Причина возврата:</label>
+          <input id="return-reason" type="text" v-model="returnReason" placeholder="Введите причину возврата">
+        </div>
     `,
     methods: {
 
@@ -28,8 +38,8 @@ Vue.component('task', {
         isEditingTask(task) {
             return task.updatedAt === null;
         },
-        isFirstTask(taskIndex, tasks) {
-            return taskIndex === 0 && tasks[taskIndex].updatedAt === null;
+        isFirstTask(index, tasks) {
+            return index === 0 && tasks[index].updatedAt === null;
         },
         checkDeadline(task) {
             const currentDate = new Date();
@@ -38,13 +48,12 @@ Vue.component('task', {
             if (deadlineDate < currentDate) {
                 task.isOverdue = true;
             }
-        }
+        },
     }
 });
 
-
 Vue.component('task-list', {
-    props: ['tasks', 'column'],
+    props: ['tasks', 'column', 'returnReason'],
     template: `
       <div class="task-list">
         <transition-group>
@@ -58,7 +67,6 @@ Vue.component('task-list', {
         }
     }
 });
-
 
 Vue.component('column', {
     props: ['column', 'columns'],
@@ -79,19 +87,8 @@ Vue.component('column', {
         <task-list :tasks="column.tasks" :column="column"></task-list>
         <button v-if="column.title === 'Задачи в работе'" @click="moveToTesting(column)">Перенести в 'Тестирование'</button>
         <button v-if="column.title === 'Запланированные задачи'" @click="moveToWork(column)">Перенести в 'Задачи в работе'</button>
-        <button v-if="column.title === 'Тестирование'" @click="moveToWork(column)">Обратно в 'Задачи в работе'</button>
+        <button v-if="column.title === 'Тестирование'" @click="moveToWorkTest(column)">Обратно в 'Задачи в работе'</button>
         <button v-if="column.title === 'Тестирование'" @click="moveToCompletedtasks">Перенести в выполненные</button>
-        <div v-if="showReturnInput">
-          <label>Причина возврата:</label>
-          <input type="text" v-model="returnReason" @input="updateReasonToWork" placeholder="Введите причину возврата">
-        </div>
-        <column
-            v-for="(col, index) in columns"
-            :key="col.title + index"
-            :column="col"
-            :columns="columns"
-            @move-to-testing="moveTaskToTesting"
-        ></column>
       </div>
     `,
     methods: {
@@ -114,7 +111,7 @@ Vue.component('column', {
         updateReasonToWork() {
             this.column.tasks.forEach(task => {
                 if (task.isEditing) {
-                    task.reasonToWork = this.returnReason;
+                    task.returnReason = this.returnReason;
                 }
             });
         },
@@ -128,6 +125,10 @@ Vue.component('column', {
         moveTaskToTesting(task) {
             const testingColumn = this.columns.find(col => col.title === 'Тестирование');
             if (testingColumn) {
+                const taskIndex = testingColumn.tasks.findIndex(t => t.isEditing);
+                if (taskIndex !== -1) {
+                    testingColumn.tasks[taskIndex].showReturnInput = true;
+                }
                 testingColumn.tasks.push(task);
             }
         },
@@ -142,12 +143,39 @@ Vue.component('column', {
                 }
             }
         },
+
+        moveToWorkTest(column) {
+            if (column.tasks.length > 0) {
+                const taskToMove = column.tasks[0];
+                if (!taskToMove.returnReason) {
+                    alert('Необходимо указать причину возврата');
+                    return;
+                }
+                const workColumn = this.columns.find(col => col.title === 'Задачи в работе');
+                if (workColumn) {
+                    const index = column.tasks.indexOf(taskToMove);
+                    if (index !== -1) {
+                        // Удаляем задачу из исходного массива без мутации
+                        const newTasks = [...column.tasks];
+                        newTasks.splice(index, 1);
+                        column.tasks = newTasks;
+                        workColumn.tasks.push({ ...taskToMove, returnReason: taskToMove.returnReason });
+                    }
+                    taskToMove.returnReason = '';
+                } else {
+                    alert("Нужна причина возврата");
+                }
+            }
+        },
         moveToWork(column) {
             if (column.tasks.length > 0) {
                 const taskToMove = column.tasks[0];
-                const workColumn = this.$parent.columns.find(col => col.title
-                    === 'Задачи в работе');
-                if (workColumn) {
+                if (taskToMove.returnReason !== '') {
+                    const workColumn = this.$parent.columns.find(col => col.title === 'Задачи в работе');
+                    if (!workColumn) {
+                        alert("Нужна причина возврата");
+                        return;
+                    }
                     const index = column.tasks.indexOf(taskToMove);
                     if (index !== -1) {
                         // Удаляем задачу из исходного массива без мутации
@@ -160,7 +188,8 @@ Vue.component('column', {
                 }
             }
         },
-        }
+
+    }
 
 });
 
@@ -223,6 +252,7 @@ const app = new Vue({
             if (column.tasks.length > 0) {
                 const taskToMove = column.tasks[0];
                 const workColumn = this.columns.find(col => col.title === 'Задачи в работе');
+                console.log(workColumn)
                 if (workColumn) {
                     const index = column.tasks.indexOf(taskToMove);
                     if (index !== -1) {
@@ -244,12 +274,11 @@ const app = new Vue({
             }
             column.tasks.shift();
         },
-        moveToCompletedtasks(task) {
-            const index = this.completedTasks.indexOf(task);
-            if (index !== -1) {
-                this.completedTasks.splice(index, 1);
-                // Добавляем задачу в столбец "Выполненные задачи"
-                this.$root.$emit('move-to-completed-tasks', task);
+        moveToCompletedtasks() {
+            const completedColumn = this.columns.find(col => col.title === 'Выполненные задачи');
+            if (completedColumn) {
+                const taskToMove = this.column.tasks.shift();
+                completedColumn.tasks.push(taskToMove);
             }
         },
         removeTask(task) {
